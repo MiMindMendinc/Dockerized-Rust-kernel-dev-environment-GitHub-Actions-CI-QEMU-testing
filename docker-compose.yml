@@ -1,0 +1,19 @@
+version: '3.8'
+services:
+  kernel-dev:
+    build: .
+    container_name: rust-kernel-dev
+    volumes:
+      - .:/workspace
+      - cargo-cache:/home/kernel/.cargo/registry
+      - cargo-git:/home/kernel/.cargo/git
+    working_dir: /workspace
+    stdin_open: true
+    tty: true
+    user: "1000:1000"
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  cargo-cache:
+  cargo-git:

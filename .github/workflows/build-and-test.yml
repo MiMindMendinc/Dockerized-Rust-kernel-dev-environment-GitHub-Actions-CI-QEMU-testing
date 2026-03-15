@@ -1,0 +1,77 @@
+name: Kernel Build & QEMU Test
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ── Docker image ──────────────────────────────────────────────────────
+      - name: Build Docker image
+        run: docker build -t kernel-build .
+
+      # ── Kernel binary ─────────────────────────────────────────────────────
+      # Run as root inside the container so the bind-mounted workspace
+      # (owned by the GitHub Actions runner uid) is writable.
+      - name: Build bootimage
+        run: |
+          docker run --rm \
+            -u 0:0 \
+            -v ${{ github.workspace }}:/workspace \
+            kernel-build \
+            cargo bootimage --release
+
+      # ── QEMU headless boot test ───────────────────────────────────────────
+      # Serial output is captured via -serial stdio and piped to a file.
+      # `timeout 60` ensures the step terminates even if the kernel loops;
+      # `|| true` prevents a non-zero QEMU exit code from failing the step.
+      - name: Run QEMU headless test
+        run: |
+          docker run --rm \
+            -u 0:0 \
+            -v ${{ github.workspace }}:/workspace \
+            kernel-build \
+            bash -c "timeout 60 qemu-system-x86_64 \
+              -drive format=raw,file=target/x86_64-unknown-none/release/bootimage-extreme-rust-kernel.bin \
+              -serial stdio \
+              -display none \
+              -m 512M \
+              -device isa-debug-exit,iobase=0xf4,iosize=0x04 \
+              -no-reboot \
+              2>&1" | tee qemu-output.txt || true
+
+      # ── Verify boot output ────────────────────────────────────────────────
+      - name: Check boot output
+        run: |
+          if grep -qi "panic" qemu-output.txt; then
+            echo "❌ Boot test failed – kernel panicked"
+            echo "--- qemu-output.txt ---"
+            cat qemu-output.txt
+            exit 1
+          elif grep -qi "hello\|kernel started" qemu-output.txt; then
+            echo "✅ Boot test passed"
+          else
+            echo "❌ Boot test failed – no expected output found"
+            echo "--- qemu-output.txt ---"
+            cat qemu-output.txt
+            exit 1
+          fi
+
+      # ── Upload artefact ───────────────────────────────────────────────────
+      - name: Upload bootimage
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bootimage
+          path: target/x86_64-unknown-none/release/bootimage-*.bin
+          retention-days: 7

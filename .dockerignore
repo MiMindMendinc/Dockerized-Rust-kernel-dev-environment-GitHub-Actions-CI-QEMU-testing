@@ -1,0 +1,28 @@
+# Build artefacts
+.git
+target
+
+# Editor / IDE directories
+.vscode
+.idea
+*.swp
+.DS_Store
+
+# Environment files
+.env
+
+# Node / Python artefacts (not relevant to a kernel project, but guards
+# against accidental inclusion when sharing the Docker image recipe)
+node_modules
+__pycache__
+*.pyc
+.pytest_cache
+.coverage
+coverage
+
+# Documentation and CI config are not needed inside the image
+tests/
+docs/
+README.md
+LICENSE
+.github
