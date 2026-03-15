@@ -1,0 +1,17 @@
+# Rust build artefacts
+target/
+
+# Cargo lock file – omitted for library-style demo; re-add for production
+Cargo.lock
+
+# Kernel binary images produced by cargo-bootimage
+*.bin
+
+# QEMU test output captured by CI
+qemu-output.txt
+
+# Editor / OS noise
+.DS_Store
+*.swp
+.vscode/
+.idea/
