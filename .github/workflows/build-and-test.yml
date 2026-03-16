@@ -1,0 +1,40 @@
+name: Build and Test
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Build Docker image
+        run: docker build -t rust-kernel-dev .
+
+      - name: Build bootimage inside container
+        run: |
+          docker run --rm \
+            -v "${{ github.workspace }}:/workspace" \
+            rust-kernel-dev \
+            bash -c "cd /workspace && cargo bootimage"
+
+      - name: Build QEMU tests
+        run: |
+          docker run --rm \
+            -v "${{ github.workspace }}:/workspace" \
+            rust-kernel-dev \
+            bash -c "cd /workspace && cargo test --no-run"
+
+      - name: Upload kernel artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: kernel-image
+          path: target/x86_64-*/debug/bootimage-*.bin
+          if-no-files-found: ignore
