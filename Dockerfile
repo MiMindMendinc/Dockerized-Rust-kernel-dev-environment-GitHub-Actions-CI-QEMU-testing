@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-FROM rust:nightly-slim
+FROM rustlang/rust:nightly-bookworm-slim
 
 # Install system dependencies:
 #   qemu-system-x86  – headless kernel testing
