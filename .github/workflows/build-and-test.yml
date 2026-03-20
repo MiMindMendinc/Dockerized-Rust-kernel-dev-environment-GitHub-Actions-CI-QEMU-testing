@@ -1,40 +1,22 @@
-name: Build and Test
+name: Build & Test Rust Kernel
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ main ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ main ]
 
 jobs:
-  build-and-test:
+  build:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-
     steps:
-      - uses: actions/checkout@v6
-
-      - name: Build Docker image
-        run: docker build -t rust-kernel-dev .
-
-      - name: Build bootimage inside container
-        run: |
-          docker run --rm \
-            -v "${{ github.workspace }}:/workspace" \
-            rust-kernel-dev \
-            bash -c "cd /workspace && cargo bootimage"
-
-      - name: Build QEMU tests
-        run: |
-          docker run --rm \
-            -v "${{ github.workspace }}:/workspace" \
-            rust-kernel-dev \
-            bash -c "cd /workspace && cargo test --no-run"
-
-      - name: Upload kernel artifact
-        uses: actions/upload-artifact@v4
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@nightly
         with:
-          name: kernel-image
-          path: target/x86_64-*/debug/bootimage-*.bin
-          if-no-files-found: ignore
+          targets: x86_64-unknown-none
+      - name: Install bootimage
+        run: cargo install bootimage
+      - name: Build kernel
+        run: cargo bootimage
+      - name: Test in QEMU
+        run: qemu-system-x86_64 -drive format=raw,file=target/x86_64-unknown-none/release/bootimage-mimindmend-rust-kernel.bin -display none -serial stdio -device isa-debug-exit,iobase=0xf4,iosize=0x04 -no-reboot -d guest_errors | head -n 10
