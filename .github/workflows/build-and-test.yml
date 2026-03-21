@@ -14,7 +14,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@nightly
         with:
           targets: x86_64-unknown-none
-          components: rust-src
+          components: rust-src, llvm-tools-preview
       - name: Install bootimage
         run: cargo install bootimage
       - name: Build kernel
