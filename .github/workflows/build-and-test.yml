@@ -14,10 +14,12 @@ jobs:
       - uses: dtolnay/rust-toolchain@nightly
         with:
           targets: x86_64-unknown-none
-          components: rust-src
+          components: rust-src, llvm-tools-preview
+      - name: Install QEMU
+        run: sudo apt-get install -y qemu-system-x86
       - name: Install bootimage
         run: cargo install bootimage
       - name: Build kernel
-        run: cargo bootimage
+        run: cargo bootimage --release
       - name: Test in QEMU
         run: qemu-system-x86_64 -drive format=raw,file=target/x86_64-unknown-none/release/bootimage-mimindmend-rust-kernel.bin -display none -serial stdio -device isa-debug-exit,iobase=0xf4,iosize=0x04 -no-reboot -d guest_errors | head -n 10
