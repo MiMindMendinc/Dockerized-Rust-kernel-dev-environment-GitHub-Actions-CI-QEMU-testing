@@ -6,7 +6,7 @@ use core::panic::PanicInfo;
 
 entry_point!(kernel_main);
 
-fn kernel_main(_boot_info: &'static mut BootInfo) -> ! {
+fn kernel_main(_boot_info: &'static BootInfo) -> ! {
     let vga_buffer = 0xb8000 as *mut u16;
     let hello = b"Hello from Michigan MindMend Rust Kernel!  \xf0\x9f\x9a\x80\xef\xb8\x8f";
 
@@ -22,4 +22,4 @@ fn kernel_main(_boot_info: &'static mut BootInfo) -> ! {
 #[panic_handler]
 fn panic(_info: &PanicInfo) -> ! {
     loop {}
-}.
+}
